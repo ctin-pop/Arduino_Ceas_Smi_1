@@ -1,9 +1,11 @@
+#include <DS3231.h>
 #include <Time.h>
 #include <TimeLib.h>
 
 #include <LiquidCrystal.h>
 
 LiquidCrystal lcd(8,9,4,5,6,7);
+DS3231 RTC(SDA, SCL);
 time_t t;
 int x;
 
@@ -18,9 +20,11 @@ int SYNC;
 void setup() {
   
   lcd.begin(16,2);
+  RTC.begin();
   selActive = false;
   longPressActive = false;
   selTimer = 0;
+  
 
   FORMAT_ORA = 0;
 }
@@ -51,6 +55,10 @@ void loop() {
   }
 
   digitalClockDisplay(t);
+}
+
+time_t syncWithRTC(){
+  return RTC.getUnixTime(RTC.getTime());
 }
 
 boolean selActiveMenu;
@@ -127,6 +135,8 @@ void mainMenu(){
         break;
         case 1:
         lcd.print("RTC");
+        setSyncProvider(syncWithRTC);
+        setSyncInterval(10);
         break;
         case 2:
         lcd.print("BLU");
@@ -283,28 +293,27 @@ void digitalClockDisplay(time_t t){
       lcd.print("PM");
     else
       lcd.print("AM");
-  lcd.write(" ");
-  lcd.print("TEMP");
+  lcd.print("  ");
+  lcd.print(roWeekDay(weekday(t)));
   lcd.setCursor(0,1);
   lcd.print(String(day(t)));
   lcd.write("/");
   lcd.print(String(month(t)));
   lcd.write("/");
   lcd.print(String(year(t)));
-  lcd.setCursor(9,1);
-  lcd.print(roWeekDay(weekday(t)));
+  lcd.setCursor(10,1);
 }
 
 String roWeekDay(int wkd){
   switch(wkd){
-    case 0: return "ER";
-    case 1: return "DU";
-    case 2: return "LU";
-    case 3: return "MA";
-    case 4: return "MI";
-    case 5: return "JO";
-    case 6: return "VI";
-    case 7: return "SA";
+    case 0: return "ERR";
+    case 1: return "DUM";
+    case 2: return "LUN";
+    case 3: return "MAR";
+    case 4: return "MIE";
+    case 5: return "JOI";
+    case 6: return "VIN";
+    case 7: return "SAM";
   }
 }
 
