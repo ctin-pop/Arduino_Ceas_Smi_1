@@ -31,18 +31,14 @@ void loop() {
 
     if((millis() - selTimer > longPressTime) && (longPressActive == false)){
       longPressActive = true;
-      configTime();
+      mainMenu();
     }
   }
     
   else{
     if(selActive == true){
-      if(longPressActive = true){
+      if(longPressActive == true){
         longPressActive = false;
-      }
-      else{
-        lcd.setCursor(0,1);
-        lcd.print("ZZZZZZZZZZZZZZZZ");
       }
 
       selActive = false;
@@ -52,38 +48,64 @@ void loop() {
   digitalClockDisplay(t);
 }
 
-boolean selActiveMen;
-boolean longPressActiveMen;
-long selTimerMen;
+boolean selActiveMenu;
+boolean longPressActiveMenu;
+long selTimerMenu;
 
-/*void mainMenu(){
-  x = analogRead(A0);
+void mainMenu(){
+  int sel = 0;
+  int NUM_MENUS = 2 + 1;
+
+  lcd.clear();
+  lcd.setCursor(0,0);
+  lcd.print("MENIU  PRINCIPAL");
   
-  if(x > 715 && x < 725){
-    if(selActive == false){
-      selActive = true;
-      selTimer = millis();
-    }
-
-    if((millis() - selTimer > longPressTime) && (longPressActive == false)){
-      longPressActive = true;
-      configTime();
-    }
-  }
+  while(true){
+    x = analogRead(A0);
     
-  else{
-    if(selActive == true){
-      if(longPressActive = true){
-        longPressActive = false;
-      }
-      else{
-        
+    
+    if(x > 715 && x < 725){
+      if(selActiveMenu == false){
+        selActiveMenu = true;
+        selTimerMenu = millis();
       }
 
-      selActive = false;
+      if((millis() - selTimerMenu > longPressTime) && (longPressActiveMenu == false)){
+        longPressActiveMenu = true;
+        return;
+      }
+    }
+    
+    else{
+      if(selActiveMenu == true){
+        if(longPressActiveMenu == true){
+          longPressActiveMenu = false;
+        }
+        else{
+          sel = (sel + 1) % NUM_MENUS;
+        }
+
+        selActiveMenu = false;
+      }
+    }
+    
+    lcd.setCursor(0,1);
+    switch(sel){
+      case 0:
+      lcd.print("Setare ceas  ");
+      break;
+      case 1:
+      lcd.print("Setare alarma");
+      break;
+      case 2:
+      lcd.print("Format ora   ");
+      break;
+      case 3:
+      lcd.print("Sincronizare ");
+      break;
     }
   }
-}*/
+}
 
 boolean selActiveCfg;
 boolean longPressActiveCfg;
