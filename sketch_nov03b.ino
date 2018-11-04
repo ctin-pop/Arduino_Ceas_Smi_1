@@ -12,12 +12,17 @@ boolean longPressActive;
 long selTimer;
 const long longPressTime = 1000;
 
+bool FORMAT_ORA; //1 for AM/PM, 0 for 24H
+int SYNC;
+
 void setup() {
   
   lcd.begin(16,2);
   selActive = false;
   longPressActive = false;
   selTimer = 0;
+
+  FORMAT_ORA = 0;
 }
 
 void loop() {
@@ -54,11 +59,12 @@ long selTimerMenu;
 
 void mainMenu(){
   int sel = 0;
-  int NUM_MENUS = 2 + 1;
+  int NUM_MENUS = 4;
 
   lcd.clear();
   lcd.setCursor(0,0);
   lcd.print("MENIU  PRINCIPAL");
+  delay(400);
   
   while(true){
     x = analogRead(A0);
@@ -72,6 +78,7 @@ void mainMenu(){
 
       if((millis() - selTimerMenu > longPressTime) && (longPressActiveMenu == false)){
         longPressActiveMenu = true;
+        lcd.clear();
         return;
       }
     }
@@ -92,16 +99,47 @@ void mainMenu(){
     lcd.setCursor(0,1);
     switch(sel){
       case 0:
-      lcd.print("Setare ceas  ");
+      lcd.print("Setare ceas       ");
+      if(x > 125 && x < 135){
+        configTime();
+        lcd.print("MENIU  PRINCIPAL");
+      }
       break;
       case 1:
-      lcd.print("Setare alarma");
+      lcd.print("Setare alarma     ");
       break;
       case 2:
-      lcd.print("Format ora   ");
+      lcd.print("Format ora ");
+      if((x > 125 && x < 135) || (x > 300  && x < 310)){
+        FORMAT_ORA = !FORMAT_ORA;
+        delay(300);
+      }
+      if(FORMAT_ORA)
+        lcd.print("AM/PM");
+      else
+        lcd.print("  24H");
       break;
       case 3:
-      lcd.print("Sincronizare ");
+      lcd.print("Sincronizare:");
+      switch(SYNC){
+        case 0:
+        lcd.print("OFF");
+        break;
+        case 1:
+        lcd.print("RTC");
+        break;
+        case 2:
+        lcd.print("BLU");
+        break;
+      }
+      if(x > 125 && x < 135){
+        SYNC = (SYNC + 1)%3;
+        delay(300);
+      }
+      else if(x > 300 && x < 310){
+        SYNC = (SYNC - 1)%3;
+        delay(300);
+      }
       break;
     }
   }
@@ -224,13 +262,27 @@ int modifDate(int aRead, int dat, int type){
 
 void digitalClockDisplay(time_t t){
   lcd.setCursor(0,0);
-  printDigits(hour(t));
+  if(FORMAT_ORA){
+    if(hour(t) == 0)
+      lcd.print("12");
+    else
+      lcd.print(hour(t)%12);
+  }
+  else{
+    printDigits(hour(t));
+  }
   lcd.write(":");
   printDigits(minute(t));
   lcd.write(":");
   printDigits(second(t));
   lcd.write(" ");
-  lcd.print(roWeekDay(weekday(t)));
+  if(!FORMAT_ORA)
+    lcd.print("  ");
+  else
+    if(hour(t) >= 12)
+      lcd.print("PM");
+    else
+      lcd.print("AM");
   lcd.write(" ");
   lcd.print("TEMP");
   lcd.setCursor(0,1);
@@ -239,7 +291,8 @@ void digitalClockDisplay(time_t t){
   lcd.print(String(month(t)));
   lcd.write("/");
   lcd.print(String(year(t)));
-  lcd.write("    ");
+  lcd.setCursor(9,1);
+  lcd.print(roWeekDay(weekday(t)));
 }
 
 String roWeekDay(int wkd){
