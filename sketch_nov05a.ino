@@ -8,9 +8,21 @@
 
 LiquidCrystal lcd(8,9,4,5,6,7);
 SFE_BMP180 bmp180;
-DS3231 RTC(SDA, SCL);
+DS3231 RTC(A2, A3);
 
 const int buzz = 2;
+const int soundPin = 1;
+int soundVal = 0;
+
+byte Bell[8] = {
+  B00100,
+  B00100,
+  B01110,
+  B01110,
+  B11111,
+  B11111,
+  B00100,
+};
 
 time_t t;
 time_t alarm;
@@ -26,7 +38,7 @@ bool FORMAT_ORA; //1 for AM/PM, 0 for 24H
 int SYNC;
 
 void setup() {
-  
+  pinMode (soundPin, INPUT);
   lcd.begin(16,2);
   RTC.begin();
   bmp180.begin();
@@ -35,10 +47,12 @@ void setup() {
   selTimer = 0;
   alarmIsSet = false;
 
+  lcd.createChar(0, Bell);
   FORMAT_ORA = 0;
 }
 
 void loop() {
+  soundVal = digitalRead(soundPin);
   x = analogRead(A0);
   t = now();
   if(x > 715 && x < 725){
@@ -61,12 +75,20 @@ void loop() {
 
       selActive = false;
     }
+  if (soundVal == LOW){
+    mainMenu();
+  }
   }
 
   lcd.setCursor(10,1);
   if(alarmIsSet){
     if(t>alarm){
-      lcd.write('B');
+      if(second(t) % 3)
+        lcd.write(byte(0));
+      if((second(t) + 1) % 3)
+        lcd.write(byte(0));
+      if((second(t) + 2) % 3)
+        lcd.write(byte(0));
       digitalWrite(buzz, HIGH);
       if(x >= 0&& x < 10)
         alarmIsSet = false;
@@ -105,7 +127,7 @@ void mainMenu(){
 
   lcd.clear();
   lcd.setCursor(0,0);
-  lcd.print("MENIU  PRINCIPAL");
+  lcd.print("MAIN MENU");
   delay(400);
   
   while(true){
@@ -146,11 +168,11 @@ void mainMenu(){
     
     switch(sel){
       case 0:
-      lcd.print("Setare ceas       ");
+      lcd.print("Set Clock       ");
       if(enableEdit){
         configTime();
         enableEdit = false;
-        lcd.print("MENIU  PRINCIPAL");
+        lcd.print("MAIN MENU");
       }
       else if(x > 125 && x < 135){
         sel = (sel + 1)%NUM_MENUS;
@@ -162,11 +184,11 @@ void mainMenu(){
       }
       break;
       case 1:
-      lcd.print("Setare alarma     ");
+      lcd.print("Set Alarm:      ");
       if(enableEdit){
         configAlarm();
         enableEdit = false;
-        lcd.print("MENIU  PRINCIPAL");
+        lcd.print("MAIN MENU");
       }
       else if(x > 125 && x < 135){
         sel = (sel + 1)%NUM_MENUS;
@@ -178,7 +200,7 @@ void mainMenu(){
       }
       break;
       case 2:
-      lcd.print("Format ora ");
+      lcd.print("Hour Form:");
       if(enableEdit && ((x > 125 && x < 135) || (x > 300  && x < 310))){
         FORMAT_ORA = !FORMAT_ORA;
         delay(300);
@@ -192,12 +214,12 @@ void mainMenu(){
         delay(300);
       }
       if(FORMAT_ORA)
-        lcd.print("AM/PM");
+        lcd.print(" AM/PM");
       else
-        lcd.print("  24H");
+        lcd.print("   24H");
       break;
       case 3:
-      lcd.print("Sincronizare:");
+      lcd.print("Sync:  ");
       
       if(SYNC < 0)
         SYNC = SYNC + 3;
@@ -205,17 +227,17 @@ void mainMenu(){
 
       switch(SYNC){
         case 0:
-        lcd.print("OFF");
+        lcd.print("OFF    ");
         setSyncProvider(syncOff);
         setSyncInterval(0);
         break;
         case 1:
-        lcd.print("RTC");
+        lcd.print("RTC    ");
         setSyncProvider(syncWithRTC);
         setSyncInterval(10);
         break;
         case 2:
-        lcd.print("BLU");
+        lcd.print("BLU     ");
         setSyncProvider(syncWithBLU);
         setSyncInterval(10);
         break;
@@ -242,20 +264,20 @@ void mainMenu(){
         }
       }
             
-      if(x > 125 && x < 135){
+      /*if(x > 125 && x < 135){
         SYNC = (SYNC + 1)%3;
         delay(300);
       }
       else if(x > 300 && x < 310){
         SYNC = (SYNC - 1)%3;
         delay(300);
-      }
+      }*/
       break;
       case 4:
-      lcd.print("Temp & Pres     ");
+      lcd.print("Temp & Press     ");
       if(enableEdit){
         displayTemp();
-        lcd.print("MENIU  PRINCIPAL");
+        lcd.print("  MAIN MENU");
         enableEdit = false;
       }
       else{
@@ -339,7 +361,7 @@ void configAlarm(){
   x = analogRead(A0);
 
   lcd.setCursor(0,0);
-  lcd.print("ALARMA:");
+  lcd.print("ALARM:");
 
   selActiveAlarm = false;
   longPressActiveAlarm = false;
@@ -394,19 +416,19 @@ void configAlarm(){
   
   switch(sel){
     case 0:
-    lcd.print("      ORA");
+    lcd.print("     HOUR");
     if(enableEdit)
       tm.Hour = modifDate(x, tm.Hour, sel);
     break;
     
     case 1:
-    lcd.print("  MINUTUL");
+    lcd.print("   MINUTE");
     if(enableEdit)
       tm.Minute = modifDate(x, tm.Minute, sel);
     break;
     
     case 2:
-    lcd.print("  SECUNDA");
+    lcd.print("  SECONDS");
     if(enableEdit)
       tm.Second = modifDate(x, tm.Second, sel);
     break;
@@ -439,7 +461,7 @@ void configTime(){
   x = analogRead(A0);
 
   lcd.setCursor(0,0);
-  lcd.print("CONFIGURARE CEAS:");
+  lcd.print("SET CLOCK:  ");
 
   selActiveCfg = false;
   longPressActiveCfg = false;
@@ -492,42 +514,42 @@ void configTime(){
     sel = sel + 6;
   switch(sel){
     case 0:
-    lcd.print("Ora: ");
+    lcd.print("Hour: ");
     lcd.print(cHour);
     if(enableEdit)
       cHour = modifDate(x, cHour, sel);
     break;
     
     case 1:
-    lcd.print("Minutul: ");
+    lcd.print("Minute:  ");
     lcd.print(cMinute);
     if(enableEdit)
       cMinute = modifDate(x, cMinute, sel);
     break;
     
     case 2:
-    lcd.print("Secunda: ");
+    lcd.print("Seconds:  ");
     lcd.print(cSecond);
     if(enableEdit)
       cSecond = modifDate(x, cSecond, sel);
     break;
     
     case 3:
-    lcd.print("Ziua: ");
+    lcd.print("Day:  ");
     lcd.print(cDay + 1);
     if(enableEdit)
       cDay = modifDate(x, cDay, sel);
     break;
     
     case 4:
-    lcd.print("Luna: ");
+    lcd.print("Month: ");
     lcd.print(cMonth + 1);
     if(enableEdit)
       cMonth = modifDate(x, cMonth, sel);
     break;
     
     case 5:
-    lcd.print("Anul: ");
+    lcd.print("Year: ");
     lcd.print(cYear + 1970);
     if(enableEdit)
       cYear = modifDate(x, cYear, sel);
@@ -591,13 +613,13 @@ void digitalClockDisplay(time_t t){
 String roWeekDay(int wkd){
   switch(wkd){
     case 0: return "ERR";
-    case 1: return "DUM";
-    case 2: return "LUN";
-    case 3: return "MAR";
-    case 4: return "MIE";
-    case 5: return "JOI";
-    case 6: return "VIN";
-    case 7: return "SAM";
+    case 1: return "SUN";
+    case 2: return "MON";
+    case 3: return "TUE";
+    case 4: return "WED";
+    case 5: return "THU";
+    case 6: return "FRY";
+    case 7: return "SAT";
   }
 }
 
