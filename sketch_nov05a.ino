@@ -85,10 +85,16 @@ void loop() {
     if(t>alarm){
       if(second(t) % 3)
         lcd.write(byte(0));
+      else
+        lcd.write(' ');
       if((second(t) + 1) % 3)
         lcd.write(byte(0));
+      else
+        lcd.write(' ');
       if((second(t) + 2) % 3)
         lcd.write(byte(0));
+      else
+        lcd.write(' ');
       digitalWrite(buzz, HIGH);
       if(x >= 0&& x < 10)
         alarmIsSet = false;
